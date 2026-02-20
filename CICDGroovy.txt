@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['dev', 'prod'],
+            description: 'Choose environment to deploy'
+        )
+    }
+
+    stages {
+
+        stage('Clone Repo') {
+            steps {
+          
+                deleteDir()
+
+               
+                dir('terraform-code') {
+                    git(
+                        branch: 'main',
+                        url: 'https://github.com/DhirajPatil98/CICD_terra.git',
+                        credentialsId: 'git-creds'
+                    )
+                }
+            }
+        }
+
+        stage('Terraform Init in 12.CICD') {
+            steps {
+                dir('terraform-code/12.CICD') {
+                    echo "Initializing Terraform in 12.CICD"
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Init + Workspace in 13.CICD1') {
+            steps {
+                dir('terraform-code/13.CICD1') {
+                    echo "Initializing Terraform in 13.CICD1"
+                    sh 'terraform init'
+
+                    // Select or create workspace
+                    sh """
+                    if terraform workspace list | grep -w ${params.ENVIRONMENT}; 
+                    then
+                        echo "Workspace exists. Selecting ${params.ENVIRONMENT}"
+                        terraform workspace select ${params.ENVIRONMENT}
+                    else
+                        echo "Workspace does not exist. Creating ${params.ENVIRONMENT}"
+                        terraform workspace new ${params.ENVIRONMENT}
+                    fi
+                    """
+
+                    // Apply Terraform
+                    sh "terraform apply -auto-approve -var-file=${params.ENVIRONMENT}.tfvars"
+                }
+            }
+        }
+    }
+}
+
+
+
