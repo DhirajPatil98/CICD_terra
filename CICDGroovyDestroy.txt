@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+
+
+    stages {
+
+		stage('prod destroy'){
+            steps{
+               dir('terraform-code/13.CICD1'){
+               sh 'terraform workspace select prod'
+               sh 'terraform destroy -var-file=prod.tfvars -auto-approve -lock=false' 
+                
+            }
+           
+        }		   
+            
+        }
+
+        stage('dev destroy'){
+            steps{
+               dir('terraform-code/13.CICD1'){
+               sh 'terraform workspace select dev'
+               sh 'terraform destroy -var-file=dev.tfvars -auto-approve -lock=false' 
+            }
+          }
+
+        }
+      }
+  }
